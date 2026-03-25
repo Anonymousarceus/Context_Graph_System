@@ -37,14 +37,41 @@ A production-ready, full-stack application that converts fragmented SAP Order-to
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React 18 + Tailwind CSS |
-| Graph Visualization | React Flow (@xyflow/react) |
-| Backend | Node.js + Express |
-| Database | MongoDB Atlas (with graph modeling) |
-| LLM | Google Gemini API |
-| State Management | React Hooks |
+### Frontend
+| Component | Technology | Version |
+|-----------|-----------|---------|
+| Framework | React | 18.2.0 |
+| Build Tool | Vite | 5.0.8 |
+| Styling | Tailwind CSS | 3.4.0 |
+| Graph Visualization | React Flow (@xyflow/react) | 12.0.0 |
+| Notifications | React Hot Toast | 2.4.1 |
+| CSS Processing | PostCSS + Autoprefixer | 8.4.32 + 10.4.16 |
+| State Management | React Hooks | Native |
+
+### Backend
+| Component | Technology | Version |
+|-----------|-----------|---------|
+| Runtime | Node.js | 18+ |
+| Framework | Express | 4.18.2 |
+| Database | MongoDB (mongoose ODM) | 8.0.3 |
+| Logging | Winston | 3.11.0 |
+| Security | Helmet | 7.1.0 |
+| Rate Limiting | express-rate-limit | 7.1.5 |
+| Dev Tools | Nodemon | 3.0.2 |
+| ID Generation | UUID | 9.0.1 |
+| CORS | CORS | 2.8.5 |
+| Config | Dotenv | 16.3.1 |
+
+### External Services
+| Service | Purpose |
+|---------|---------|
+| MongoDB Atlas | Cloud-hosted NoSQL database |
+| Google Gemini API | LLM for natural language processing |
+
+### Deployment
+| Platform | Status |
+|----------|--------|
+| Render.com | Pre-configured in `render.yaml` |
 
 ---
 
@@ -116,8 +143,9 @@ A production-ready, full-stack application that converts fragmented SAP Order-to
 
 ### Prerequisites
 - Node.js 18+
-- PostgreSQL 14+
+- MongoDB Atlas account (or local MongoDB instance)
 - npm or yarn
+- Google Gemini API key (for LLM features)
 
 ### 1. Clone and Setup
 
@@ -248,51 +276,56 @@ context-graph-system/
 ├── backend/
 │   ├── src/
 │   │   ├── config/
-│   │   │   └── database.js      # PostgreSQL connection & schema
+│   │   │   └── database.js           # MongoDB connection & schema
 │   │   ├── controllers/
-│   │   │   ├── graphController.js
-│   │   │   └── chatController.js
+│   │   │   ├── graphController.js    # Graph API endpoints
+│   │   │   └── chatController.js     # Chat API endpoints
 │   │   ├── services/
-│   │   │   ├── graphService.js   # Graph operations
-│   │   │   ├── llmService.js     # Gemini integration
-│   │   │   └── queryService.js   # Query orchestration
+│   │   │   ├── graphService.js       # MongoDB graph operations
+│   │   │   ├── llmService.js         # Google Gemini integration
+│   │   │   └── queryService.js       # Query orchestration & execution
 │   │   ├── routes/
-│   │   │   ├── graphRoutes.js
-│   │   │   └── chatRoutes.js
+│   │   │   ├── graphRoutes.js        # Graph API routes
+│   │   │   └── chatRoutes.js         # Chat API routes
 │   │   ├── middleware/
-│   │   │   └── errorHandler.js
+│   │   │   └── errorHandler.js       # Global error handling
 │   │   ├── utils/
-│   │   │   └── logger.js
-│   │   └── index.js              # Express app entry
+│   │   │   └── logger.js             # Winston logger
+│   │   └── index.js                  # Express app entry point
 │   ├── scripts/
-│   │   ├── ingestData.js         # Data ingestion pipeline
-│   │   └── seedDatabase.js       # Schema initialization
+│   │   ├── ingestData.js             # MongoDB data ingestion pipeline
+│   │   └── seedDatabase.js           # Database schema initialization
 │   ├── package.json
 │   ├── .env
-│   └── .env.example
+│   ├── .env.example
+│   └── node_modules/
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
 │   │   │   ├── Graph/
-│   │   │   │   ├── GraphExplorer.jsx
-│   │   │   │   └── CustomNode.jsx
+│   │   │   │   ├── GraphExplorer.jsx # React Flow graph visualization
+│   │   │   │   └── CustomNode.jsx    # Custom node component
 │   │   │   ├── Chat/
-│   │   │   │   └── ChatPanel.jsx
+│   │   │   │   └── ChatPanel.jsx     # Chat interface component
 │   │   │   └── Layout/
-│   │   │       ├── Header.jsx
-│   │   │       ├── EntitySidebar.jsx
-│   │   │       └── StatsPanel.jsx
+│   │   │       ├── Header.jsx        # App header
+│   │   │       ├── EntitySidebar.jsx # Entity details panel
+│   │   │       └── StatsPanel.jsx    # Statistics display
 │   │   ├── services/
-│   │   │   └── api.js
+│   │   │   └── api.js                # Backend API client
 │   │   ├── styles/
-│   │   │   └── index.css
-│   │   ├── App.jsx
-│   │   └── main.jsx
+│   │   │   └── index.css             # Global styles with Tailwind
+│   │   ├── App.jsx                   # Main React component
+│   │   └── main.jsx                  # Vite entry point
 │   ├── index.html
 │   ├── package.json
-│   ├── vite.config.js
-│   ├── tailwind.config.js
-│   └── postcss.config.js
+│   ├── vite.config.js                # Vite configuration
+│   ├── tailwind.config.js            # Tailwind CSS configuration
+│   ├── postcss.config.js             # PostCSS configuration
+│   └── node_modules/
+├── render.yaml                        # Render.com deployment config
+├── setup.sh                           # Linux/Mac setup script
+├── setup.bat                          # Windows setup script
 └── README.md
 ```
 
@@ -301,15 +334,16 @@ context-graph-system/
 ## Key Design Decisions
 
 ### Graph Modeling in MongoDB
-We model the graph structure using two collections:
-- `nodes`: Stores all entities with type, properties (embedded documents)
-- `edges`: Stores relationships between nodes (references)
+We model the graph structure using MongoDB with collections:
+- `nodes`: Stores all entities with type, properties, and metadata
+- `edges`: Stores relationships between nodes with relationship metadata
 
-This allows for:
-- Flexible schema with embedded documents
-- Aggregation pipeline for graph traversals
-- Easy integration with existing data
-- Cloud-hosted with MongoDB Atlas
+This approach provides:
+- **Flexible Schema**: Embedded documents for complex properties
+- **Aggregation Pipeline**: Built-in graph traversals and analytics
+- **Scalability**: MongoDB Atlas cloud hosting
+- **Performance**: Indexed queries for fast lookups
+- **Easy Integration**: Direct integration with Node.js via Mongoose
 
 ### LLM Query Pipeline
 1. **Domain Check**: Validate query is O2C-related
@@ -371,8 +405,11 @@ MIT License - Feel free to use and modify.
 ## Credits
 
 Built with:
-- [React Flow](https://reactflow.dev/) - Graph visualization
-- [Tailwind CSS](https://tailwindcss.com/) - Styling
-- [Google Gemini](https://ai.google.dev/) - LLM
+- [React](https://reactjs.org/) - UI library
+- [Vite](https://vitejs.dev/) - Fast build tool
+- [React Flow](https://reactflow.dev/) - Interactive graph visualization
+- [Tailwind CSS](https://tailwindcss.com/) - Utility-first styling
+- [Google Gemini API](https://ai.google.dev/) - LLM for NLP
 - [Express](https://expressjs.com/) - Backend framework
-- [PostgreSQL](https://www.postgresql.org/) - Database
+- [MongoDB](https://www.mongodb.com/) & [Mongoose](https://mongoosejs.com/) - Database & ODM
+- [Render.com](https://render.com/) - Deployment platform
